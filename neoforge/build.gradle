@@ -249,7 +249,7 @@ publishMods {
     def projectCurseforge = "855414"
     def projectModrinth = "s4OWxYQQ"
     def slug = "irons-spells-n-spellbooks"
-    def latestChangesContent = project.file("LATEST_CHANGES.MD").text
+    def latestChangesContent = rootProject.file("LATEST_CHANGES.MD").text
 
     displayName = "v${mod_id}-${mod_version}"
     changelog = """

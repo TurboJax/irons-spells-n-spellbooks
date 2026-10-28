@@ -14,4 +14,4 @@ plugins {
 
 rootProject.name = "${mod_name}"
 
-include("neoforge", "fabric")
+include("neoforge", "fabric", "fabric-creative-tab-api-v1")

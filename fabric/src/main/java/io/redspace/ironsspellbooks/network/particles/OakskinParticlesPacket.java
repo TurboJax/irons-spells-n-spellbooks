@@ -2,36 +2,19 @@ package io.redspace.ironsspellbooks.network.particles;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.player.ClientSpellCastHelper;
+import io.redspace.ironsspellbooks.util.SimpleCodecs;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public class OakskinParticlesPacket implements CustomPacketPayload {
-    private final Vec3 pos;
+public record OakskinParticlesPacket(Vec3 pos) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<OakskinParticlesPacket> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("oakskin_particles"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, OakskinParticlesPacket> STREAM_CODEC = CustomPacketPayload.codec(OakskinParticlesPacket::write, OakskinParticlesPacket::new);
-
-    public OakskinParticlesPacket(Vec3 pos) {
-        this.pos = pos;
-    }
-
-    public OakskinParticlesPacket(FriendlyByteBuf buf) {
-        pos = buf.readVec3();
-    }
-
-    public void write(FriendlyByteBuf buf) {
-        buf.writeVec3(pos);
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, OakskinParticlesPacket> STREAM_CODEC = StreamCodec.composite(SimpleCodecs.VEC3, OakskinParticlesPacket::pos, OakskinParticlesPacket::new);
 
     public static void handle(OakskinParticlesPacket packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            ClientSpellCastHelper.handleClientboundOakskinParticles(packet.pos);
-        });
+        ClientSpellCastHelper.handleClientboundOakskinParticles(packet.pos);
     }
 
     @Override

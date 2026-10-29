@@ -114,7 +114,7 @@ public class SpellSelectionManager {
                 for (int i = 0; i < activeSpells.size(); i++) {
                     var spellSlot = activeSpells.get(i);
                     int globalIndex = addOrMergeSelectionOption(new SelectionOption(spellSlot.spellData(), equipmentSlot, i, selectionOptionList.size()));
-                    if (spellSelection.index == i && spellSelection.equipmentSlot.equals(equipmentSlot)) {
+                    if (spellSelection.index() == i && spellSelection.equipmentSlot().equals(equipmentSlot)) {
                         selectionIndex = globalIndex;
                         selectionValid = true;
                     }
@@ -165,18 +165,18 @@ public class SpellSelectionManager {
             IronsSpellbooks.LOGGER.debug("SpellSelectionManager tryLastSelection");
         }
 
-        if (spellSelection.lastEquipmentSlot.isEmpty()) {
+        if (spellSelection.lastEquipmentSlot().isEmpty()) {
             var select = selectionOptionList.stream().findFirst();
             select.ifPresent(selection -> {
                 makeLocalSelection(selection.slot, selection.slotIndex, selection.globalIndex, false);
             });
-        } else if (spellSelection.lastIndex != -1) {
-            var spellsForSlot = getSpellsForSlot(spellSelection.lastEquipmentSlot);
+        } else if (spellSelection.lastIndex() != -1) {
+            var spellsForSlot = getSpellsForSlot(spellSelection.lastEquipmentSlot());
             if (!spellsForSlot.isEmpty()) {
-                if (spellSelection.lastIndex < spellsForSlot.size()) {
-                    makeLocalSelection(spellSelection.lastEquipmentSlot, spellSelection.lastIndex, spellsForSlot.get(spellSelection.lastIndex).globalIndex, false);
+                if (spellSelection.lastIndex() < spellsForSlot.size()) {
+                    makeLocalSelection(spellSelection.lastEquipmentSlot(), spellSelection.lastIndex(), spellsForSlot.get(spellSelection.lastIndex()).globalIndex, false);
                 } else {
-                    makeLocalSelection(spellSelection.lastEquipmentSlot, 0, spellsForSlot.get(0).globalIndex, false);
+                    makeLocalSelection(spellSelection.lastEquipmentSlot(), 0, spellsForSlot.get(0).globalIndex, false);
                 }
             }
         } else {
@@ -197,7 +197,7 @@ public class SpellSelectionManager {
     private void makeLocalSelection(String slot, int slotIndex, int globalIndex, boolean doSync) {
         selectionIndex = globalIndex;
         selectionValid = true;
-        if (doSync && player.level.isClientSide) {
+        if (doSync && player.level().isClientSide) {
             spellSelection.makeSelection(slot, slotIndex);
             PacketDistributor.sendToServer(new SelectSpellPacket(spellSelection));
         }
@@ -209,7 +209,7 @@ public class SpellSelectionManager {
         }
 
         this.spellSelection = spellSelection;
-        if (player.level.isClientSide) {
+        if (player.level().isClientSide) {
             PacketDistributor.sendToServer(new SelectSpellPacket(spellSelection));
         } else {
             MagicData.getPlayerMagicData(player).getSyncedData().setSpellSelection(spellSelection);
@@ -350,7 +350,7 @@ public class SpellSelectionManager {
 //                        manager.selectionOptionList.get(i).globalIndex++;
 //                    }
 //                }
-                if (manager.spellSelection.index == localSlotIndex && manager.spellSelection.equipmentSlot.equals(slotId)) {
+                if (manager.spellSelection.index() == localSlotIndex && manager.spellSelection.equipmentSlot().equals(slotId)) {
                     manager.selectionIndex = manager.selectionOptionList.size() - 1;
                     manager.selectionValid = true;
                 }

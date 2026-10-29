@@ -5,39 +5,27 @@ import io.redspace.ironsspellbooks.api.entity.IMagicEntity;
 import io.redspace.ironsspellbooks.capabilities.magic.SyncedSpellData;
 import io.redspace.ironsspellbooks.player.ClientMagicData;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public class SyncEntityDataPacket implements CustomPacketPayload {
-    SyncedSpellData syncedSpellData;
-    int entityId;
+public record SyncEntityDataPacket(SyncedSpellData syncedSpellData, int entityId) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<SyncEntityDataPacket> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("sync_entity_data"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, SyncEntityDataPacket> STREAM_CODEC = CustomPacketPayload.codec(SyncEntityDataPacket::write, SyncEntityDataPacket::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncEntityDataPacket> STREAM_CODEC = StreamCodec.composite(
+            SyncedSpellData.STREAM_CODEC,
+            SyncEntityDataPacket::syncedSpellData,
+            ByteBufCodecs.INT,
+            SyncEntityDataPacket::entityId,
+            SyncEntityDataPacket::new);
 
     public SyncEntityDataPacket(SyncedSpellData syncedSpellData, IMagicEntity entity) {
-        this.syncedSpellData = syncedSpellData;
-        this.entityId = ((Entity) entity).getId();
-    }
-
-    public SyncEntityDataPacket(FriendlyByteBuf buf) {
-        entityId = buf.readInt();
-        syncedSpellData = SyncedSpellData.read(buf);
-    }
-
-    public void write(FriendlyByteBuf buf) {
-        buf.writeInt(entityId);
-        SyncedSpellData.write(buf, syncedSpellData);
+        this(syncedSpellData, ((Entity) entity).getId());
     }
 
     public static void handle(SyncEntityDataPacket packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            ClientMagicData.handleAbstractCastingMobSyncedData(packet.entityId, packet.syncedSpellData);
-        });
+        ClientMagicData.handleAbstractCastingMobSyncedData(packet.entityId, packet.syncedSpellData);
     }
 
     @Override

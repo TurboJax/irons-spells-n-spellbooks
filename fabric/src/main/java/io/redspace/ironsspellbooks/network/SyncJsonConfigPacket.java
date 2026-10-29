@@ -5,12 +5,11 @@ import io.redspace.ironsspellbooks.api.config.SpellConfigManager;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,43 +21,15 @@ import java.util.Map;
  * - Assuming double the vanilla spells (200) which are all maximally configured, this is a size of 90,000 bytes
  * - Packet max size is orders of magnitude larger
  */
-public class SyncJsonConfigPacket implements CustomPacketPayload {
+public record SyncJsonConfigPacket(Map<ResourceLocation,byte[]> data) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<SyncJsonConfigPacket> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("sync_config"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, SyncJsonConfigPacket> STREAM_CODEC = CustomPacketPayload.codec(SyncJsonConfigPacket::toBytes, SyncJsonConfigPacket::new);
-
-    public final Map<ResourceLocation, byte[]> data;
-
-    public SyncJsonConfigPacket(Map<ResourceLocation, byte[]> bytes) {
-        this.data = bytes;
-    }
-
-    public SyncJsonConfigPacket(FriendlyByteBuf buf) {
-        this.data = new HashMap<>();
-        int size = buf.readInt();
-        for (int i = 0; i < size; i++) {
-            var id = buf.readResourceLocation();
-            var bytes = new byte[buf.readInt()];
-            buf.readBytes(bytes, 0, bytes.length);
-            this.data.put(id, bytes);
-        }
-    }
-
-    public void toBytes(FriendlyByteBuf buf) {
-        buf.writeInt(data.size());
-        for (var entry : data.entrySet()) {
-            buf.writeResourceLocation(entry.getKey());
-            buf.writeInt(entry.getValue().length);
-            buf.writeBytes(entry.getValue());
-        }
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncJsonConfigPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.BYTE_ARRAY), SyncJsonConfigPacket::data, SyncJsonConfigPacket::new);
 
     public static void handle(SyncJsonConfigPacket packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            for (AbstractSpell spell : SpellRegistry.REGISTRY) {
-                spell.resetRarityWeights();
-            }
-            SpellConfigManager.INSTANCE.handleClientSync(packet);
-        });
+        for (AbstractSpell spell : SpellRegistry.REGISTRY) {
+            spell.resetRarityWeights();
+        }
+        SpellConfigManager.INSTANCE.handleClientSync(packet);
     }
 
     @Override

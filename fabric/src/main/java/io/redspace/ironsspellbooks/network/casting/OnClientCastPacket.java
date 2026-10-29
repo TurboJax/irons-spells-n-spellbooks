@@ -12,7 +12,16 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record OnClientCastPacket(String spellId, int level, CastSource castSource, ICastData castData) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<OnClientCastPacket> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("on_client_cast"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, OnClientCastPacket> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, OnClientCastPacket::spellId, ByteBufCodecs.INT, OnClientCastPacket::level, CastSource.STREAM_CODEC, OnClientCastPacket::castSource, ICastData.STREAM_CODEC, OnClientCastPacket::castData, OnClientCastPacket::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, OnClientCastPacket> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8,
+            OnClientCastPacket::spellId,
+            ByteBufCodecs.INT,
+            OnClientCastPacket::level,
+            CastSource.STREAM_CODEC,
+            OnClientCastPacket::castSource,
+            ICastData.STREAM_CODEC,
+            OnClientCastPacket::castData,
+            OnClientCastPacket::new);
 
     public OnClientCastPacket(String spellId, int level, CastSource castSource, ICastData castData) {
         this.spellId = spellId;
@@ -23,7 +32,6 @@ public record OnClientCastPacket(String spellId, int level, CastSource castSourc
 
     public static void handle(OnClientCastPacket packet, ClientPlayNetworking.Context context) {
         ClientSpellCastHelper.handleClientboundOnClientCast(packet.spellId, packet.level, packet.castSource, packet.castData);
-        //DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientSpellCastHelper.handleClientboundOnClientCast(spellId, level, castSource, castData));
     }
 
     @Override

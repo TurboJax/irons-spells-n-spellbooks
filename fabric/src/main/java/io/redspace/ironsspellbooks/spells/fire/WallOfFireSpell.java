@@ -184,7 +184,7 @@ public class WallOfFireSpell extends AbstractSpell {
         }
     }
 
-    public static class FireWallData implements ICastData, ISerializable {
+    public static class FireWallData implements ICastData {
         private Entity castingEntity;
         public List<Vec3> anchorPoints = new ArrayList<>();
         public float maxTotalDistance;
@@ -203,11 +203,6 @@ public class WallOfFireSpell extends AbstractSpell {
         @Override
         public CastDataType<?> getCastDataType() {
             return CastDataTypes.FIRE_WALL_DATA;
-        }
-
-        @Override
-        public SerializableType<?> getSerializableType() {
-            return SerializableTypes.FIRE_WALL_DATA;
         }
 
         @Override

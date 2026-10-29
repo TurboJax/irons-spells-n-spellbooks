@@ -2,40 +2,25 @@ package io.redspace.ironsspellbooks.network.particles;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.player.ClientSpellCastHelper;
+import io.redspace.ironsspellbooks.util.SimpleCodecs;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public class TeleportParticlesPacket implements CustomPacketPayload {
-    private final Vec3 pos1;
-    private final Vec3 pos2;
+public record TeleportParticlesPacket(Vec3 pos1, Vec3 pos2) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<TeleportParticlesPacket> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("teleport_particles"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, TeleportParticlesPacket> STREAM_CODEC = CustomPacketPayload.codec(TeleportParticlesPacket::write, TeleportParticlesPacket::new);
-
-    public TeleportParticlesPacket(Vec3 pos1, Vec3 pos2) {
-        this.pos1 = pos1;
-        this.pos2 = pos2;
-    }
-
-    public TeleportParticlesPacket(FriendlyByteBuf buf) {
-        pos1 = buf.readVec3();
-        pos2 = buf.readVec3();
-    }
-
-    public void write(FriendlyByteBuf buf) {
-        buf.writeVec3(pos1);
-        buf.writeVec3(pos2);
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, TeleportParticlesPacket> STREAM_CODEC = StreamCodec.composite(
+            SimpleCodecs.VEC3,
+            TeleportParticlesPacket::pos1,
+            SimpleCodecs.VEC3,
+            TeleportParticlesPacket::pos2,
+            TeleportParticlesPacket::new
+    );
 
     public static void handle(TeleportParticlesPacket packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            ClientSpellCastHelper.handleClientboundTeleport(packet.pos1, packet.pos2);
-        });
+        ClientSpellCastHelper.handleClientboundTeleport(packet.pos1, packet.pos2);
     }
 
     @Override

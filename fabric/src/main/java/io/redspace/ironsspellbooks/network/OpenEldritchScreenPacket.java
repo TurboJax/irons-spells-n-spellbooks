@@ -7,21 +7,14 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public class OpenEldritchScreenPacket implements CustomPacketPayload {
-    private final InteractionHand hand;
+public record OpenEldritchScreenPacket(InteractionHand hand) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<OpenEldritchScreenPacket> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("open_eldritch_screen"));
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenEldritchScreenPacket> STREAM_CODEC = CustomPacketPayload.codec(OpenEldritchScreenPacket::write, OpenEldritchScreenPacket::new);
 
-    public OpenEldritchScreenPacket(InteractionHand pHand) {
-        this.hand = pHand;
-    }
-
     public OpenEldritchScreenPacket(FriendlyByteBuf buf) {
-        this.hand = buf.readEnum(InteractionHand.class);
+        this(buf.readEnum(InteractionHand.class));
     }
 
     public void write(FriendlyByteBuf buf) {
@@ -29,9 +22,7 @@ public class OpenEldritchScreenPacket implements CustomPacketPayload {
     }
 
     public static void handle(OpenEldritchScreenPacket packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            ClientSpellCastHelper.openEldritchResearchScreen(packet.hand);
-        });
+        ClientSpellCastHelper.openEldritchResearchScreen(packet.hand);
     }
 
     @Override

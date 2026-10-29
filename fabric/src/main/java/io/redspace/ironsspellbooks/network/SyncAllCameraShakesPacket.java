@@ -1,56 +1,31 @@
 package io.redspace.ironsspellbooks.network;
 
-
 import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.api.util.CameraShakeData;
 import io.redspace.ironsspellbooks.api.util.CameraShakeManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.ArrayList;
+import java.util.List;
 
-public class SyncAllCameraShakesPacket implements CustomPacketPayload {
+public record SyncAllCameraShakesPacket(List<CameraShakeData> cameraShakeData) implements CustomPacketPayload {
     public static final Type<SyncAllCameraShakesPacket> TYPE = new Type<>(IronsSpellbooks.id("sync_all_camera_shake"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, SyncAllCameraShakesPacket> STREAM_CODEC = CustomPacketPayload.codec(SyncAllCameraShakesPacket::write, SyncAllCameraShakesPacket::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncAllCameraShakesPacket> STREAM_CODEC = StreamCodec.composite(
+            CameraShakeData.STREAM_CODEC.apply(ByteBufCodecs.list()),
+            SyncAllCameraShakesPacket::cameraShakeData,
+            SyncAllCameraShakesPacket::new
+    );
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
-
-    ArrayList<CameraShakeData> cameraShakeData;
-
-
-    public SyncAllCameraShakesPacket(ArrayList<CameraShakeData> cameraShakeData) {
-        this.cameraShakeData = cameraShakeData;
-    }
-
-    public SyncAllCameraShakesPacket(FriendlyByteBuf buf) {
-        cameraShakeData = new ArrayList<>();
-        int i = buf.readInt();
-        for (int j = 0; j < i; j++) {
-            cameraShakeData.add(CameraShakeData.deserializeFromBuffer(buf));
-        }
-    }
-
-    public void write(FriendlyByteBuf buf) {
-        buf.writeInt(cameraShakeData.size());
-        for (CameraShakeData data : cameraShakeData)
-            data.serializeToBuffer(buf);
-    }
-
     public static void handle(SyncAllCameraShakesPacket packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            CameraShakeManager.cameraShakeData.clear();
-            CameraShakeManager.cameraShakeData.addAll(packet.cameraShakeData);
-        });
+        CameraShakeManager.cameraShakeData.clear();
+        CameraShakeManager.cameraShakeData.addAll(packet.cameraShakeData);
     }
-
-
 }

@@ -31,7 +31,7 @@ public record CancelCastPacket(boolean triggerCooldown) implements CustomPacketP
             if (playerMagicData.getCastSource() == CastSource.SCROLL && spellData.getSpell().getCastType() == CastType.CONTINUOUS) {
                 Scroll.attemptRemoveScrollAfterCast(serverPlayer);
             }
-            playerMagicData.getCastingSpell().getSpell().onServerCastComplete(serverPlayer.level, spellData.getLevel(), serverPlayer, playerMagicData, true);
+            playerMagicData.getCastingSpell().getSpell().onServerCastComplete(serverPlayer.level(), spellData.getLevel(), serverPlayer, playerMagicData, true);
         }
     }
 

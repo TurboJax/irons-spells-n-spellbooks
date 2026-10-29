@@ -32,12 +32,14 @@ public class PlayerRecasts {
         this.serverPlayer = null;
     }
 
+    // Server constructor
     public PlayerRecasts(ServerPlayer serverPlayer) {
         this.recastLookup = Maps.newHashMap();
         this.serverPlayer = serverPlayer;
     }
 
     @OnlyIn(Dist.CLIENT)
+    // Client constructor
     public PlayerRecasts(Map<String, RecastInstance> recastLookup) {
         this.recastLookup = recastLookup;
         this.serverPlayer = null;

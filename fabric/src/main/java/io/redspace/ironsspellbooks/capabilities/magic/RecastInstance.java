@@ -7,6 +7,8 @@ import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
 import io.redspace.ironsspellbooks.api.spells.ICastData;
 import io.redspace.ironsspellbooks.api.spells.ICastDataSerializable;
+import io.redspace.ironsspellbooks.api.spells.SerializableType;
+import io.redspace.ironsspellbooks.registries.SerializableTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -15,10 +17,30 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class RecastInstance implements ICastDataSerializable {
+// TODO: Port
+// Hoo boy
+// This one has a fun little trait called "ICastDataSerializable".  Some of the ICastData implementations need StreamCodecs so I'll need to make another registry.  One for the regular MapCodec and another for the serializable StreamCodecs.
+public class RecastInstance {
     public static final Codec<RecastInstance> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codec.STRING.fieldOf("spellId").forGetter(RecastInstance::getSpellId), Codec.INT.fieldOf("spellLevel").forGetter(RecastInstance::getSpellLevel), Codec.INT.fieldOf("remainingRecasts").forGetter(RecastInstance::getRemainingRecasts), Codec.INT.fieldOf("totalRecasts").forGetter(RecastInstance::getTotalRecasts), Codec.INT.fieldOf("ticksToLive").forGetter(RecastInstance::getTicksToLive), Codec.INT.fieldOf("remainingTicks").forGetter(RecastInstance::getTicksRemaining), CastSource.CODEC.fieldOf("castSource").forGetter(RecastInstance::getCastSource), ICastData.CODEC.optionalFieldOf("castData").forGetter(RecastInstance::castData)).apply(instance, RecastInstance::new));
     public static final StreamCodec<RegistryFriendlyByteBuf,RecastInstance> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC);
-    public static final StreamCodec<RegistryFriendlyByteBuf,RecastInstance> STREAM_CODEC2 = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, RecastInstance::getSpellId, ByteBufCodecs.INT, RecastInstance::getSpellLevel, ByteBufCodecs.INT, RecastInstance::getRemainingRecasts, ByteBufCodecs.INT, RecastInstance::getTotalRecasts, ByteBufCodecs.INT, RecastInstance::getTicksToLive, ByteBufCodecs.INT, RecastInstance::getTicksRemaining, CastSource.STREAM_CODEC, RecastInstance::getCastSource, ISerializable.STREAM_CODEC, RecastInstance::getCastData, RecastInstance::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf,RecastInstance> STREAM_CODEC2 = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8,
+            RecastInstance::getSpellId,
+            ByteBufCodecs.INT,
+            RecastInstance::getSpellLevel,
+            ByteBufCodecs.INT,
+            RecastInstance::getRemainingRecasts,
+            ByteBufCodecs.INT,
+            RecastInstance::getTotalRecasts,
+            ByteBufCodecs.INT,
+            RecastInstance::getTicksToLive,
+            ByteBufCodecs.INT,
+            RecastInstance::getTicksRemaining,
+            CastSource.STREAM_CODEC,
+            RecastInstance::getCastSource,
+            ICastDataSerializable.STREAM_CODEC,
+            RecastInstance::getCastData,
+            RecastInstance::new);
 
     protected String spellId;
     protected int spellLevel;
@@ -88,6 +110,11 @@ public class RecastInstance implements ICastDataSerializable {
 
     public Optional<ISerializable> castData() {
         return Optional.ofNullable(castData);
+    }
+
+    @Override
+    public SerializableType<?> getSerializableType() {
+        return SerializableTypes.RECAST_INSTANCE;
     }
 
     // TODO: Remove bytebufs and use proper Codecs

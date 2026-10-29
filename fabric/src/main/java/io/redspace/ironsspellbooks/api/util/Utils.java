@@ -24,12 +24,13 @@ import io.redspace.ironsspellbooks.item.CastingItem;
 import io.redspace.ironsspellbooks.item.Scroll;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.UniqueItem;
-import io.redspace.ironsspellbooks.network.casting.ServerBoundCancelCastPacket;
+import io.redspace.ironsspellbooks.network.casting.CancelCastPacket;
 import io.redspace.ironsspellbooks.network.casting.SyncTargetingDataPacket;
 import io.redspace.ironsspellbooks.particle.FallingBlockParticleOption;
 import io.redspace.ironsspellbooks.registries.EntityRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.util.ModTags;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -396,7 +397,7 @@ public class Utils {
             if (spellData != SpellData.EMPTY) {
                 var playerMagicData = MagicData.getPlayerMagicData(serverPlayer);
                 if (playerMagicData.isCasting() && !playerMagicData.getCastingSpellId().equals(spellData.getSpell().getSpellId())) {
-                    ServerBoundCancelCastPacket.cancelCast(serverPlayer, playerMagicData.getCastType() != CastType.LONG);
+                    CancelCastPacket.cancelCast(serverPlayer, playerMagicData.getCastType() != CastType.LONG);
                 }
 
                 return spellData.getSpell().attemptInitiateCast(ItemStack.EMPTY, spellData.getSpell().getLevelFor(spellData.getLevel(), serverPlayer), serverPlayer.level, serverPlayer, spellItem.getCastSource(), true, spellItem.slot);
@@ -430,7 +431,7 @@ public class Utils {
             if (spellData != SpellData.EMPTY) {
                 var playerMagicData = MagicData.getPlayerMagicData(serverPlayer);
                 if (playerMagicData.isCasting() && !playerMagicData.getCastingSpellId().equals(spellData.getSpell().getSpellId())) {
-                    ServerBoundCancelCastPacket.cancelCast(serverPlayer, playerMagicData.getCastType() != CastType.LONG);
+                    CancelCastPacket.cancelCast(serverPlayer, playerMagicData.getCastType() != CastType.LONG);
                 }
 
                 return spellData.getSpell().attemptInitiateCast(ItemStack.EMPTY, spellData.getSpell().getLevelFor(spellData.getLevel(), serverPlayer), serverPlayer.level, serverPlayer, spellSelection.getCastSource(), true, spellSelection.slot);
@@ -440,11 +441,11 @@ public class Utils {
     }
 
     public static void serverSideCancelCast(ServerPlayer serverPlayer) {
-        ServerBoundCancelCastPacket.cancelCast(serverPlayer, MagicData.getPlayerMagicData(serverPlayer).getCastingSpell().getSpell().getCastType() == CastType.CONTINUOUS);
+        CancelCastPacket.cancelCast(serverPlayer, MagicData.getPlayerMagicData(serverPlayer).getCastingSpell().getSpell().getCastType() == CastType.CONTINUOUS);
     }
 
     public static void serverSideCancelCast(ServerPlayer serverPlayer, boolean triggerCooldown) {
-        ServerBoundCancelCastPacket.cancelCast(serverPlayer, triggerCooldown);
+        CancelCastPacket.cancelCast(serverPlayer, triggerCooldown);
     }
 
     /**
@@ -696,7 +697,7 @@ public class Utils {
             playerMagicData.setAdditionalCastData(new TargetEntityCastData(livingTarget));
             if (caster instanceof ServerPlayer serverPlayer) {
                 if (spell.getCastType() != CastType.INSTANT) {
-                    PacketDistributor.sendToPlayer(serverPlayer, new SyncTargetingDataPacket(livingTarget, spell));
+                    ServerPlayNetworking.send(serverPlayer, new SyncTargetingDataPacket(livingTarget, spell));
                 }
                 serverPlayer.connection.send(new ClientboundSetActionBarTextPacket(Component.translatable("ui.irons_spellbooks.spell_target_success", livingTarget.getDisplayName().getString(), spell.getDisplayName(serverPlayer)).withStyle(ChatFormatting.GREEN)));
             }

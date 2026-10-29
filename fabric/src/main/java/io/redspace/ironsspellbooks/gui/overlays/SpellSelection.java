@@ -1,17 +1,35 @@
 package io.redspace.ironsspellbooks.gui.overlays;
 
-import io.redspace.ironsspellbooks.api.network.ISerializable;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 
+public class SpellSelection {
+    public static final Codec<SpellSelection> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.fieldOf("equipmentSlot").forGetter(SpellSelection::equipmentSlot),
+            Codec.INT.fieldOf("index").forGetter(SpellSelection::index),
+            Codec.STRING.fieldOf("lastEquipmentSlot").forGetter(SpellSelection::lastEquipmentSlot),
+            Codec.INT.fieldOf("lastIndex").forGetter(SpellSelection::lastIndex)
+    ).apply(instance, SpellSelection::new));
 
-public class SpellSelection implements ISerializable, INBTSerializable<CompoundTag> {
-    public String equipmentSlot;
-    public int index;
-    public String lastEquipmentSlot;
-    public int lastIndex;
+    public static final StreamCodec<ByteBuf,SpellSelection> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8,
+            SpellSelection::equipmentSlot,
+            ByteBufCodecs.INT,
+            SpellSelection::index,
+            ByteBufCodecs.STRING_UTF8,
+            SpellSelection::lastEquipmentSlot,
+            ByteBufCodecs.INT,
+            SpellSelection::lastIndex,
+            SpellSelection::new
+    );
+
+    private String equipmentSlot;
+    private int index;
+    private String lastEquipmentSlot;
+    private int lastIndex;
 
     public SpellSelection() {
         equipmentSlot = "";
@@ -20,18 +38,27 @@ public class SpellSelection implements ISerializable, INBTSerializable<CompoundT
         lastIndex = -1;
     }
 
-    public SpellSelection(String equipmentSlot, int index) {
-        this.equipmentSlot = equipmentSlot;
-        this.index = index;
-        this.lastEquipmentSlot = "";
-        this.lastIndex = -1;
-    }
-
     public SpellSelection(String equipmentSlot, int index, String lastEquipmentSlot, int lastIndex) {
         this.equipmentSlot = equipmentSlot;
         this.index = index;
         this.lastEquipmentSlot = lastEquipmentSlot;
         this.lastIndex = lastIndex;
+    }
+
+    public String equipmentSlot() {
+        return equipmentSlot;
+    }
+
+    public int index() {
+        return index;
+    }
+
+    public String lastEquipmentSlot() {
+        return lastEquipmentSlot;
+    }
+
+    public int lastIndex() {
+        return lastIndex;
     }
 
     public boolean isEmpty() {
@@ -45,40 +72,6 @@ public class SpellSelection implements ISerializable, INBTSerializable<CompoundT
             this.equipmentSlot = equipmentSlot;
             this.index = index;
         }
-    }
-
-    @Override
-    public void writeToBuffer(FriendlyByteBuf buffer) {
-        buffer.writeUtf(equipmentSlot);
-        buffer.writeInt(index);
-        buffer.writeUtf(lastEquipmentSlot);
-        buffer.writeInt(lastIndex);
-    }
-
-    @Override
-    public void readFromBuffer(FriendlyByteBuf buffer) {
-        equipmentSlot = buffer.readUtf();
-        index = buffer.readInt();
-        lastEquipmentSlot = buffer.readUtf();
-        lastIndex = buffer.readInt();
-    }
-
-    @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-        var compoundTag = new CompoundTag();
-        compoundTag.putString("slot", equipmentSlot);
-        compoundTag.putInt("index", index);
-        compoundTag.putString("lastSlot", lastEquipmentSlot);
-        compoundTag.putInt("lastIndex", lastIndex);
-        return compoundTag;
-    }
-
-    @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag compoundTag) {
-        equipmentSlot = compoundTag.getString("slot");
-        index = compoundTag.getInt("index");
-        lastEquipmentSlot = compoundTag.getString("lastSlot");
-        lastIndex = compoundTag.getInt("lastIndex");
     }
 
     @Override

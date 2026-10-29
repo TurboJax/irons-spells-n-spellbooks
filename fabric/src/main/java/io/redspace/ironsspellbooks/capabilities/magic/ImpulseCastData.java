@@ -11,8 +11,7 @@ public class ImpulseCastData implements ICastDataSerializable {
     public float z;
     public boolean hasImpulse;
 
-    public ImpulseCastData() {
-    }
+    public ImpulseCastData() {}
 
     public ImpulseCastData(float x, float y, float z, boolean hasImpulse) {
         this.x = x;

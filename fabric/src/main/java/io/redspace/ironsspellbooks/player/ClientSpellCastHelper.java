@@ -55,8 +55,8 @@ public class ClientSpellCastHelper {
     }
 
     public static void handleCastErrorMessage(CastErrorPacket packet) {
-        var spell = SpellRegistry.getSpell(packet.spellId);
-        if (packet.errorType == CastErrorPacket.ErrorType.COOLDOWN) {
+        var spell = SpellRegistry.getSpell(packet.spellId());
+        if (packet.errorType() == CastErrorPacket.ErrorType.COOLDOWN) {
             //ignore cooldown message if we are simply holding right click.
             if (ClientInputEvents.hasReleasedSinceCasting) {
                 Minecraft.getInstance().gui.setOverlayMessage(Component.translatable("ui.irons_spellbooks.cast_error_cooldown", spell.getDisplayName(Minecraft.getInstance().player)).withStyle(ChatFormatting.RED), false);
@@ -72,7 +72,7 @@ public class ClientSpellCastHelper {
     public static void handleClientboundBloodSiphonParticles(Vec3 pos1, Vec3 pos2) {
         if (Minecraft.getInstance().player == null)
             return;
-        var level = Minecraft.getInstance().player.level;
+        var level = Minecraft.getInstance().player.level();
         Vec3 direction = pos2.subtract(pos1).scale(.1f);
         for (int i = 0; i < 40; i++) {
             Vec3 scaledDirection = direction.scale(1 + Utils.getRandomScaled(.35));
@@ -84,7 +84,7 @@ public class ClientSpellCastHelper {
     public static void handleClientboundFlamethrowerParticles(Vec3 pos, Vec3 dir) {
         if (Minecraft.getInstance().player == null)
             return;
-        var level = Minecraft.getInstance().player.level;
+        var level = Minecraft.getInstance().player.level();
         int particleCount = dir.lengthSqr() < 0.25 ? 3 : 5;
         for (int i = 0; i < particleCount; i++) {
             Vec3 spread = Utils.getRandomVec3(0.025);
@@ -94,17 +94,16 @@ public class ClientSpellCastHelper {
         }
     }
 
-    public static void handleClientboundShockwaveParticle(Vec3 pos, float radius, ParticleType<?> particleType) {
-        if (Minecraft.getInstance().player == null || !(particleType instanceof ParticleOptions)) {
-            return;
-        }
-        var level = Minecraft.getInstance().player.level;
+    public static void handleClientboundShockwaveParticle(Vec3 pos, float radius, ParticleOptions particle) {
+        if (Minecraft.getInstance().player == null) return;
+
+        var level = Minecraft.getInstance().player.level();
         int count = (int) (2 * Mth.PI * radius) * 2;
         float angle = 360f / count * Mth.DEG_TO_RAD;
 
         for (int i = 0; i < count; i++) {
             Vec3 motion = new Vec3(Mth.cos(angle * i) * radius, 0, Mth.sin(angle * i) * radius).scale(Utils.random.nextIntBetweenInclusive(50, 70) * .00155);
-            level.addParticle((ParticleOptions) particleType, pos.x + motion.x * 4, pos.y, pos.z + motion.z * 4, motion.x, motion.y, motion.z);
+            level.addParticle(particle, pos.x + motion.x * 4, pos.y, pos.z + motion.z * 4, motion.x, motion.y, motion.z);
         }
     }
 
@@ -112,7 +111,7 @@ public class ClientSpellCastHelper {
         var player = Minecraft.getInstance().player;
 
         if (player != null) {
-            var level = Minecraft.getInstance().player.level;
+            var level = Minecraft.getInstance().player.level();
             for (int j = 0; j < 15; ++j) {
                 level.addParticle(coloredMobEffect(MobEffects.HEAL.value().getColor()), pos.x + Utils.getRandomScaled(0.25D), pos.y + Utils.getRandomScaled(1) + 1, pos.z + Utils.getRandomScaled(0.25D), Utils.getRandomScaled(0.005D), Utils.getRandomScaled(0.025D), Utils.getRandomScaled(0.005D));
             }
@@ -131,9 +130,9 @@ public class ClientSpellCastHelper {
         var player = Minecraft.getInstance().player;
 
         if (player != null) {
-            var level = Minecraft.getInstance().player.level;
+            var level = Minecraft.getInstance().player.level();
             for (int j = 0; j < 15; ++j) {
-                level.addParticle(coloredMobEffect(MobEffectRegistry.FORTIFY.get().getColor()), pos.x + Utils.getRandomScaled(0.5D), pos.y + Utils.getRandomScaled(1), pos.z + Utils.getRandomScaled(0.5D), 0, 0, 0);
+                level.addParticle(coloredMobEffect(MobEffectRegistry.FORTIFY.value().getColor()), pos.x + Utils.getRandomScaled(0.5D), pos.y + Utils.getRandomScaled(1), pos.z + Utils.getRandomScaled(0.5D), 0, 0, 0);
             }
         }
     }
@@ -147,7 +146,7 @@ public class ClientSpellCastHelper {
             double d1 = Mth.randomBetween(randomsource, 0F, 2f);
             double d2 = Mth.randomBetween(randomsource, -0.5F, 0.5F);
             var particleType = randomsource.nextFloat() < .1f ? ParticleHelper.FIREFLY : new BlockParticleOption(ParticleTypes.BLOCK, Blocks.OAK_WOOD.defaultBlockState());
-            player.level.addParticle(particleType, pos.x + d0, pos.y + d1, pos.z + d2, d0 * .05, 0.05, d2 * .05);
+            player.level().addParticle(particleType, pos.x + d0, pos.y + d1, pos.z + d2, d0 * .05, 0.05, d2 * .05);
         }
     }
 
@@ -155,7 +154,7 @@ public class ClientSpellCastHelper {
         var player = Minecraft.getInstance().player;
 
         if (player != null) {
-            var level = player.level;
+            var level = player.level();
             int ySteps = 16;
             int xSteps = 48;
             float yDeg = 180f / ySteps * Mth.DEG_TO_RAD;
@@ -173,7 +172,7 @@ public class ClientSpellCastHelper {
         var player = Minecraft.getInstance().player;
 
         if (player != null) {
-            var level = player.level;
+            var level = player.level();
             int ySteps = 128;
             float yDeg = 360f / ySteps * Mth.DEG_TO_RAD;
             for (int y = 0; y < ySteps; y++) {
@@ -193,14 +192,14 @@ public class ClientSpellCastHelper {
      */
     public static void handleClientboundOnClientCast(String spellId, int level, CastSource castSource, ICastData castData) {
         var spell = SpellRegistry.getSpell(spellId);
-        spell.onClientCast(Minecraft.getInstance().player.level, level, Minecraft.getInstance().player, castData);
+        spell.onClientCast(Minecraft.getInstance().player.level(), level, Minecraft.getInstance().player, castData);
     }
 
     public static void handleClientboundTeleport(Vec3 pos1, Vec3 pos2) {
         var player = Minecraft.getInstance().player;
 
         if (player != null) {
-            var level = Minecraft.getInstance().player.level;
+            var level = Minecraft.getInstance().player.level();
             TeleportSpell.particleCloud(level, pos1);
             TeleportSpell.particleCloud(level, pos2);
         }
@@ -208,7 +207,7 @@ public class ClientSpellCastHelper {
 
     public static void handleClientboundFieryExplosion(Vec3 pos, float radius) {
         MinecraftInstanceHelper.ifPlayerPresent(player -> {
-            var level = player.level;
+            var level = player.level();
             var x = pos.x;
             var y = pos.y;
             var z = pos.z;
@@ -256,22 +255,22 @@ public class ClientSpellCastHelper {
         var player = Minecraft.getInstance().player;
 
         if (player != null) {
-            var level = Minecraft.getInstance().player.level;
+            var level = Minecraft.getInstance().player.level();
             FrostStepSpell.particleCloud(level, pos1);
             FrostStepSpell.particleCloud(level, pos2);
         }
     }
 
     public static void handleClientBoundOnCastStarted(UUID castingEntityId, String spellId, int spellLevel) {
-        var player = Minecraft.getInstance().player.level.getPlayerByUUID(castingEntityId);
+        var player = Minecraft.getInstance().player.level().getPlayerByUUID(castingEntityId);
         var spell = SpellRegistry.getSpell(spellId);
         spell.getCastStartAnimation().getForPlayer().ifPresent((resourceLocation -> AnimationHelper.animatePlayerStart(player, resourceLocation)));
-        spell.onClientPreCast(player.level, spellLevel, player, player.getUsedItemHand(), null);
+        spell.onClientPreCast(player.level(), spellLevel, player, player.getUsedItemHand(), null);
     }
 
     public static void handleClientBoundOnCastFinished(UUID castingEntityId, String spellId, boolean cancelled) {
         ClientMagicData.resetClientCastState(castingEntityId);
-        var player = Minecraft.getInstance().player.level.getPlayerByUUID(castingEntityId);
+        var player = Minecraft.getInstance().player.level().getPlayerByUUID(castingEntityId);
 
         var spell = SpellRegistry.getSpell(spellId);
 

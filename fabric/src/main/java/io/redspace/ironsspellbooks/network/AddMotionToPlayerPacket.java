@@ -36,8 +36,9 @@ public record AddMotionToPlayerPacket(double x, double y, double z, boolean pres
             player.setDeltaMovement(packet.x, packet.y, packet.z);
     }
 
+    @NotNull
     @Override
-    public CustomPacketPayload.@NotNull Type<AddMotionToPlayerPacket> type() {
+    public CustomPacketPayload.Type<AddMotionToPlayerPacket> type() {
         return TYPE;
     }
 }

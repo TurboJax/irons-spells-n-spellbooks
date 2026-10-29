@@ -22,7 +22,7 @@ import io.redspace.ironsspellbooks.entity.mobs.wizards.cursed_armor_stand.Cursed
 import io.redspace.ironsspellbooks.item.Scroll;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.UpgradeOrbItem;
-import io.redspace.ironsspellbooks.network.casting.ServerBoundCancelCastPacket;
+import io.redspace.ironsspellbooks.network.casting.CancelCastPacket;
 import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.UpgradeOrbTypeRegistry;
@@ -109,7 +109,7 @@ public class ClientPlayerEvents {
     @SubscribeEvent
     public static void onPlayerOpenScreen(ScreenEvent.Opening event) {
         if (ClientMagicData.isCasting()) {
-            PacketDistributor.sendToServer(new ServerBoundCancelCastPacket(SpellRegistry.getSpell(ClientMagicData.getCastingSpellId()).getCastType() == CastType.CONTINUOUS));
+            PacketDistributor.sendToServer(new CancelCastPacket(SpellRegistry.getSpell(ClientMagicData.getCastingSpellId()).getCastType() == CastType.CONTINUOUS));
         }
     }
 

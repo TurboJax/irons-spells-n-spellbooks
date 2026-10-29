@@ -20,6 +20,10 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.turbojax.event.EventManager;
 
+// TODO: Port
+// This class is an enigmatic mess of unordered junk that I have no clue to handle at this point in time. (Lookin' at you, ICastData)
+// It'll take some work.
+// I think I have the proper starting point with the codec registry that lets you get codecs for an instance of ICastData.
 public class MagicData {
     public static final Codec<MagicData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("mana").forGetter(m -> (int) m.getMana()),

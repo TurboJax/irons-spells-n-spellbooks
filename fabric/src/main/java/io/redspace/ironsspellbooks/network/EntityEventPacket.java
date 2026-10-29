@@ -8,28 +8,18 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import javax.annotation.Nullable;
-
-public class EntityEventPacket<T extends Entity & IClientEventEntity> implements CustomPacketPayload {
-    private final int entityId;
-    private final byte eventId;
-
+public record EntityEventPacket<T extends Entity & IClientEventEntity>(int entityId, byte eventId) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<EntityEventPacket<?>> TYPE = new CustomPacketPayload.Type<>(IronsSpellbooks.id("entity_event"));
     public static final StreamCodec<RegistryFriendlyByteBuf, EntityEventPacket<?>> STREAM_CODEC = CustomPacketPayload.codec(EntityEventPacket::write, EntityEventPacket::new);
 
     public EntityEventPacket(Entity pEntity, byte pEventId) {
-        this.entityId = pEntity.getId();
-        this.eventId = pEventId;
+        this(pEntity.getId(), pEventId);
     }
 
     public EntityEventPacket(FriendlyByteBuf pBuffer) {
-        this.entityId = pBuffer.readInt();
-        this.eventId = pBuffer.readByte();
+        this(pBuffer.readInt(), pBuffer.readByte());
     }
 
     public void write(FriendlyByteBuf pBuffer) {
@@ -38,22 +28,11 @@ public class EntityEventPacket<T extends Entity & IClientEventEntity> implements
     }
 
     public static void handle(EntityEventPacket<?> packet, ClientPlayNetworking.Context context) {
-        context.enqueueWork(() -> {
-            MinecraftInstanceHelper.ifPlayerPresent(player -> {
-                if (packet.getEntity(player.level) instanceof IClientEventEntity entity) {
-                    entity.handleClientEvent(packet.getEventId());
-                }
-            });
+        MinecraftInstanceHelper.ifPlayerPresent(player -> {
+            if (player.level().getEntity(packet.entityId) instanceof IClientEventEntity entity) {
+                entity.handleClientEvent(packet.eventId);
+            }
         });
-    }
-
-    @Nullable
-    public Entity getEntity(Level pLevel) {
-        return pLevel.getEntity(this.entityId);
-    }
-
-    public byte getEventId() {
-        return this.eventId;
     }
 
     @Override

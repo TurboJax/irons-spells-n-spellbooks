@@ -1,74 +1,84 @@
 package io.redspace.ironsspellbooks.spells;
 
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.redspace.ironsspellbooks.api.spells.CastDataType;
 import io.redspace.ironsspellbooks.api.spells.ICastDataSerializable;
+import io.redspace.ironsspellbooks.api.spells.SerializableCastDataType;
 import io.redspace.ironsspellbooks.registries.CastDataTypes;
+import io.redspace.ironsspellbooks.registries.SerializableCastDataTypes;
+import io.redspace.ironsspellbooks.util.SimpleCodecs;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 
 public class CastingMobAimingData implements ICastDataSerializable {
-    public static final Vector3f ZERO = new Vector3f();
-    public static MapCodec<CastingMobAimingData> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
-            instance.group(Codec.INT.fieldOf("hi")).apply(instance, ));
+    public static MapCodec<CastingMobAimingData> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Vec3.CODEC.fieldOf("aimPosition").forGetter(CastingMobAimingData::aimPosition),
+            Vec3.CODEC.fieldOf("lastAimPosition").forGetter(CastingMobAimingData::lastAimPosition)
+        ).apply(instance, CastingMobAimingData::new));
 
-    public static StreamCodec<RegistryFriendlyByteBuf,CastingMobAimingData> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.VECTOR3F, CastingMobAimingData::aimPosition, ByteBufCodecs.VECTOR3F, CastingMobAimingData::lastAimPosition, CastingMobAimingData::fromNetwork);
+    public static StreamCodec<RegistryFriendlyByteBuf,CastingMobAimingData> STREAM_CODEC = StreamCodec.composite(
+            SimpleCodecs.VEC3,
+            CastingMobAimingData::aimPosition,
+            SimpleCodecs.VEC3,
+            CastingMobAimingData::lastAimPosition,
+            CastingMobAimingData::new);
 
-    private Vector3f aimPosition = ZERO;
-    private Vector3f lastAimPosition = ZERO;
+    private Vec3 aimPosition = Vec3.ZERO;
+    private Vec3 lastAimPosition = Vec3.ZERO;
     private float lastPartialTick = 0;
 
-    public Vector3f aimPosition() {
+    public CastingMobAimingData() {}
+
+    public CastingMobAimingData(Vec3 aimPosition, Vec3 lastAimPositon) {
+        this.aimPosition = aimPosition;
+        this.lastAimPosition = lastAimPositon;
+    }
+
+    public Vec3 aimPosition() {
         return aimPosition;
     }
 
-    public Vector3f lastAimPosition() {
+    public Vec3 lastAimPosition() {
         return lastAimPosition;
     }
 
     public void updateAim(Entity target, float strength) {
-        Vector3f wanted = target.getBoundingBox().getCenter().toVector3f();
-        if (aimPosition.equals(ZERO)) {
+        Vec3 wanted = target.getBoundingBox().getCenter();
+        if (aimPosition.equals(Vec3.ZERO)) {
             aimPosition = wanted;
             lastAimPosition = wanted;
         } else {
             lastAimPosition = aimPosition;
-            aimPosition = aimPosition.add(wanted.sub(aimPosition).mul(strength));
+            aimPosition = aimPosition.add(wanted.subtract(aimPosition).scale(strength));
         }
     }
+
+    public Vec3 getAimPosition(float partialTick) {
+        // create "lock" on partial tick so that packet delay doesn't leave the renderer snapping to the last old pos when partial tick loops back to 0
+        if (partialTick > lastPartialTick) {
+            lastPartialTick = partialTick;
+        }
+
+        return lastAimPosition.lerp(aimPosition, lastPartialTick);
+    }
+
+    public Vec3 getForward(Entity host) {
+        return aimPosition.subtract(host.getEyePosition()).normalize();
+    }
+
+    @Override
+    public void reset() {}
 
     @Override
     public CastDataType<?> getCastDataType() {
         return CastDataTypes.CASTING_MOB_AIMING_DATA;
     }
 
-    public static CastingMobAimingData fromNetwork(Vector3f aimPosition, Vector3f lastAimPosition) {
-        CastingMobAimingData data = new CastingMobAimingData();
-        data.aimPosition =aimPosition;
-        data.lastAimPosition = lastAimPosition;
-        return data;
-    }
-
-    public Vec3 getAimPosition(float partialTick) {
-        // create "lock" on partial tick so that packet delay doesn't leave the renderer snapping to the last old pos when partial tick loops back to 0
-        if(partialTick > lastPartialTick ){
-            lastPartialTick = partialTick;
-        }
-        return new Vec3(lastAimPosition.lerp(aimPosition, lastPartialTick));
-    }
-
-    public Vec3 getForward(Entity host) {
-        return new Vec3(aimPosition).subtract(host.getEyePosition()).normalize();
-    }
-
     @Override
-    public void reset() {
-
+    public SerializableCastDataType<?> getSerializableType() {
+        return SerializableCastDataTypes.CASTING_MOB_AIMING_DATA;
     }
 }

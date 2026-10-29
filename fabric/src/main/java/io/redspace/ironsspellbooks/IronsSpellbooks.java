@@ -23,7 +23,9 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.FriendlyByteBuf;
@@ -67,12 +69,34 @@ public class IronsSpellbooks implements ModInitializer {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static MagicManager MAGIC_MANAGER;
 
+    public static EnvType ENV = FabricLoader.getInstance().getEnvironmentType();
     public static MinecraftServer MCS;
     public static ServerLevel OVERWORLD;
 
+    /**
+     * Broadcasts a packet to all the players on a server.
+     * If this is executed from the client, the packet is thrown out.
+     *
+     * @param packet The {@link CustomPacketPayload packet} to broadcast.
+     */
+    public static void broadcast(CustomPacketPayload packet) {
+        if (ENV == EnvType.CLIENT) return;
+
+        PlayerLookup.all(MCS).forEach(p -> ServerPlayNetworking.send(p, packet));
+    }
+
     @Override
     public void onInitialize() {
+        // Listening for some lifecycle events
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            MCS = server;
+            OVERWORLD = server.overworld();
+        });
 
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            MCS = null;
+            OVERWORLD = null;
+        });
 
         // Registering packets and their handlers
         registerPackets();

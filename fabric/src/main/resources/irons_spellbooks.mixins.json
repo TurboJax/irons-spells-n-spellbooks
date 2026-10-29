@@ -28,6 +28,9 @@
     "TridentItemMixin",
     "VaultServerDataAccessor"
   ],
+  "server": [
+    "server.MinecraftServerMixin"
+  ],
   "client": [
     "ClientBookAccessMixin",
     "ClientEntityMixin",

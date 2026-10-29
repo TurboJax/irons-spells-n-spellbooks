@@ -206,18 +206,6 @@ public class ServerPlayerEvents {
     }
 
     @SubscribeEvent
-    public static void onServerStoppedEvent(ServerStoppedEvent event) {
-        IronsSpellbooks.MCS = null;
-        IronsSpellbooks.OVERWORLD = null;
-    }
-
-    @SubscribeEvent
-    public static void onServerStarted(ServerStartedEvent event) {
-        IronsSpellbooks.MCS = event.getServer();
-        IronsSpellbooks.OVERWORLD = IronsSpellbooks.MCS.overworld();
-    }
-
-    @SubscribeEvent
     public static void onLivingEquipmentChangeEvent(LivingEquipmentChangeEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             var playerMagicData = MagicData.getPlayerMagicData(serverPlayer);

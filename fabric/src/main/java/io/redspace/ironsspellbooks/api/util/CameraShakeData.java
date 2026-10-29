@@ -1,17 +1,38 @@
 package io.redspace.ironsspellbooks.api.util;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
+import io.redspace.ironsspellbooks.util.SimpleCodecs;
 import net.fabricmc.api.EnvType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class CameraShakeData {
+    public static final StreamCodec<RegistryFriendlyByteBuf, CameraShakeData> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT,
+            CameraShakeData::id,
+            SimpleCodecs.VEC3,
+            CameraShakeData::origin,
+            ResourceKey.streamCodec(Registries.DIMENSION),
+            CameraShakeData::dimension,
+            ByteBufCodecs.FLOAT,
+            CameraShakeData::radius,
+            ByteBufCodecs.INT,
+            CameraShakeData::duration,
+            CameraShakeData::new
+    );
+
     private final int id;
     private final Vec3 origin;
     private final ResourceKey<Level> dimension;
     private final float radius;
     private final int duration;
+
+    // Ignored by packets, omitted from codec.
     private int tick = 0;
 
     // Server-only

@@ -1,68 +1,63 @@
 package io.redspace.ironsspellbooks.api.util;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.network.FriendlyByteBuf;
+import net.fabricmc.api.EnvType;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 
 public class CameraShakeData {
+    private final int id;
+    private final Vec3 origin;
+    private final ResourceKey<Level> dimension;
+    private final float radius;
+    private final int duration;
+    private int tick = 0;
 
-    final int duration;
-    final float radius;
-    int tickCount = 0;
-    final int id;
-    final Vec3 origin;
-    final ResourceKey<Level> dimension;
-
-    /**
-     * ADDS CAMERA SHAKE TO OVERWORLD! Use level-sensitive version instead {@link CameraShakeData#CameraShakeData(Level, int, Vec3, float)}
-     */
-    @Deprecated(forRemoval = true)
-    public CameraShakeData(int duration, Vec3 origin, float radius) {
-        this(null, duration, origin, radius);
-        IronsSpellbooks.LOGGER.warn("Addon creating camera shake without specifying dimension! Adding to overworld.");
+    // Server-only
+    public CameraShakeData(Vec3 origin, ResourceKey<Level> dimension, float radius, int duration) {
+        if (IronsSpellbooks.ENV == EnvType.CLIENT) throw new RuntimeException("The client cannot create its own CameraShakeData ids");
+        this(CameraShakeManager.getNextId(), origin, dimension, radius, duration);
     }
 
-    public CameraShakeData(@NotNull Level level, int duration, Vec3 origin, float radius) {
-        this(level == null ? ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")) : level.dimension(),
-                CameraShakeManager.getNextId(),
-                duration,
-                origin,
-                radius);
-    }
-
-    private CameraShakeData(ResourceKey<Level> level, int id, int duration, Vec3 origin, float radius) {
-        this.dimension = level;
+    // Client-only
+    public CameraShakeData(int id, Vec3 origin, ResourceKey<Level> dimension, float radius, int duration) {
         this.id = id;
-        this.duration = duration;
         this.origin = origin;
+        this.dimension = dimension;
         this.radius = radius;
+        this.duration = duration;
     }
 
-    public void serializeToBuffer(FriendlyByteBuf buf) {
-        buf.writeInt(id);
-        buf.writeInt(duration);
-        buf.writeInt(tickCount);
-        buf.writeInt((int) (origin.x * 10));
-        buf.writeInt((int) (origin.y * 10));
-        buf.writeInt((int) (origin.z * 10));
-        buf.writeInt((int) (radius * 10));
-        buf.writeResourceKey(dimension);
+    public int id() {
+        return id;
     }
 
-    public static CameraShakeData deserializeFromBuffer(FriendlyByteBuf buf) {
-        int id = buf.readInt();
-        int duration = buf.readInt();
-        int tickCount = buf.readInt();
-        Vec3 origin = new Vec3(buf.readInt() / 10f, buf.readInt() / 10f, buf.readInt() / 10f);
-        float radius = buf.readInt() / 10f;
-        ResourceKey<Level> dimension = buf.readResourceKey(Registries.DIMENSION);
-        CameraShakeData data = new CameraShakeData(dimension, id, duration, origin, radius);
-        data.tickCount = tickCount;
-        return data;
+    public Vec3 origin() {
+        return origin;
+    }
+
+    public ResourceKey<Level> dimension() {
+        return dimension;
+    }
+
+    public float radius() {
+        return radius;
+    }
+
+    public int duration() {
+        return duration;
+    }
+
+    public int tick() {
+        return tick;
+    }
+
+    public void incrTick() {
+        tick++;
+    }
+
+    public boolean isDone() {
+        return tick >= duration;
     }
 }

@@ -5,6 +5,7 @@ import io.redspace.ironsspellbooks.api.config.SpellConfigManager;
 import io.redspace.ironsspellbooks.api.magic.MagicHelper;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
+import io.redspace.ironsspellbooks.api.util.CameraShakeManager;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.config.ClientConfigs;
 import io.redspace.ironsspellbooks.config.ServerConfigs;
@@ -19,7 +20,6 @@ import io.redspace.ironsspellbooks.network.spells.LearnSpellPacket;
 import io.redspace.ironsspellbooks.registries.*;
 import io.redspace.ironsspellbooks.setup.ModSetup;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -28,7 +28,6 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -56,10 +55,10 @@ import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.turbojax.event.EventManager;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -98,6 +97,9 @@ public class IronsSpellbooks implements ModInitializer {
             OVERWORLD = null;
         });
 
+        // Registering event handlers
+        EventManager.register(new CameraShakeManager());
+
         // Registering packets and their handlers
         registerPackets();
 
@@ -127,7 +129,8 @@ public class IronsSpellbooks implements ModInitializer {
         registerClientBoundPacket(EquipmentChangedPacket.TYPE, EquipmentChangedPacket.STREAM_CODEC, EquipmentChangedPacket::handle);
         registerClientBoundPacket(OpenEldritchScreenPacket.TYPE, OpenEldritchScreenPacket.STREAM_CODEC, OpenEldritchScreenPacket::handle);
         registerClientBoundPacket(SyncAnimationPacket.TYPE, SyncAnimationPacket.STREAM_CODEC, SyncAnimationPacket::handle);
-        registerClientBoundPacket(SyncCameraShakePacket.TYPE, SyncCameraShakePacket.STREAM_CODEC, SyncCameraShakePacket::handle);
+        registerClientBoundPacket(AddCameraShakePacket.TYPE, AddCameraShakePacket.STREAM_CODEC, AddCameraShakePacket::handle);
+        registerClientBoundPacket(RemoveCameraShakePacket.TYPE, RemoveCameraShakePacket.STREAM_CODEC, RemoveCameraShakePacket::handle);
         registerClientBoundPacket(SyncAllCameraShakesPacket.TYPE, SyncAllCameraShakesPacket.STREAM_CODEC, SyncAllCameraShakesPacket::handle);
         registerClientBoundPacket(SyncManaPacket.TYPE, SyncManaPacket.STREAM_CODEC, SyncManaPacket::handle);
         registerClientBoundPacket(PlayPlayerAnimationPacket.TYPE, PlayPlayerAnimationPacket.STREAM_CODEC, PlayPlayerAnimationPacket::handle);
@@ -149,7 +152,7 @@ public class IronsSpellbooks implements ModInitializer {
         registerClientBoundPacket(FlamethrowerParticlesPacket.TYPE, FlamethrowerParticlesPacket.STREAM_CODEC, FlamethrowerParticlesPacket::handle);
 
         //CASTING
-        registerServerBoundPacket(ServerBoundCancelCastPacket.TYPE, ServerBoundCancelCastPacket.STREAM_CODEC, ServerBoundCancelCastPacket::handle);
+        registerServerBoundPacket(CancelCastPacket.TYPE, CancelCastPacket.STREAM_CODEC, CancelCastPacket::handle);
         registerClientBoundPacket(CastErrorPacket.TYPE, CastErrorPacket.STREAM_CODEC, CastErrorPacket::handle);
         registerClientBoundPacket(OnCastFinishedPacket.TYPE, OnCastFinishedPacket.STREAM_CODEC, OnCastFinishedPacket::handle);
         registerClientBoundPacket(OnCastStartedPacket.TYPE, OnCastStartedPacket.STREAM_CODEC, OnCastStartedPacket::handle);

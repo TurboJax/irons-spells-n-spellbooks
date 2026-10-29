@@ -32,6 +32,7 @@
     "server.MinecraftServerMixin"
   ],
   "client": [
+    "CameraMixin",
     "ClientBookAccessMixin",
     "ClientEntityMixin",
     "EntityRendererMixin",
